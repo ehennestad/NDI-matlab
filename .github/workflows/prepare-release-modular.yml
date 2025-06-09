@@ -46,13 +46,41 @@ jobs:
   test:
     name: Run MATLAB tests
     needs: [validate_version, build_matrix]
-    uses: ehennestad/matbox/.github/workflows/reusable-job_run-tests.yml@make-release-workflow-reusable
-    with:
-      code_directory: ${{ env.CODE_DIRECTORY }}
-      tools_directory: ${{ env.TOOLS_DIRECTORY }}
-      matlab_products: ${{ env.MATLAB_PRODUCTS }}
-      needs_python: ${{ env.NEEDS_PYTHON }}
-      matrix_json: ${{ needs.build_matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
+    steps:      
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.MATLABVersion }}
+          cache: true
+
+      - name: Install MatBox
+        uses: ehennestad/matbox/.github/actions/install-matbox@v0.9
+
+      - name: Run tests
+        uses: matlab-actions/run-command@v2
+        if: always()
+        with:
+          command: |
+            setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
+            setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            ndi.cloud.authenticate("InteractionEnabled", "off")
+            addpath('.')
+            addpath(genpath( "tests" ));
+            testToolbox()
 
   release:
     name: Package toolbox and create draft release

@@ -15,14 +15,11 @@ on:
 env:
   # Directory containing your MATLAB source code (relative to repository root)
   CODE_DIRECTORY: +ndi
-  
   # Directory containing tools and MLToolboxInfo.json (relative to repository root)
   TOOLS_DIRECTORY: tests
-  
   # Set to true if your toolbox requires Python for testing
   # This will include Python versions in the test matrix and set up Python environments
   NEEDS_PYTHON: false
-  
   # Optional MATLAB products to install during testing (space-separated list)
   # Examples: 'Simulink Signal_Processing_Toolbox' or leave empty for base MATLAB only
   MATLAB_PRODUCTS: ''

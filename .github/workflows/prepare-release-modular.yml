@@ -11,19 +11,6 @@ on:
         required: true
         type: string
 
-# Configuration - modify these values to customize for your project
-env:
-  # Directory containing your MATLAB source code (relative to repository root)
-  CODE_DIRECTORY: +ndi
-  # Directory containing tools and MLToolboxInfo.json (relative to repository root)
-  TOOLS_DIRECTORY: tests
-  # Set to true if your toolbox requires Python for testing
-  # This will include Python versions in the test matrix and set up Python environments
-  NEEDS_PYTHON: false
-  # Optional MATLAB products to install during testing (space-separated list)
-  # Examples: 'Simulink Signal_Processing_Toolbox' or leave empty for base MATLAB only
-  MATLAB_PRODUCTS: ''
-
 jobs:
   validate_version:
     name: Validate version number
@@ -31,53 +18,25 @@ jobs:
     with:
       version: ${{ inputs.version }}
       ref_name: ${{ github.ref_name }}
-      tools_directory: ${{ env.TOOLS_DIRECTORY }}
+      tools_directory: tests
 
   build_matrix:
     name: Build release test matrix
     uses: ehennestad/matbox/.github/workflows/reusable-job_build-matrix.yml@make-release-workflow-reusable
     with:
-      tools_directory: ${{ env.TOOLS_DIRECTORY }}
-      needs_python: ${{ env.NEEDS_PYTHON }}
+      tools_directory: tests
+      needs_python: false
 
   test:
     name: Run MATLAB tests
     needs: [validate_version, build_matrix]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
-    steps:      
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      - name: Start virtual display server
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y xvfb
-          Xvfb :99 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
-      - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v2
-        with:
-          release: ${{ matrix.MATLABVersion }}
-          cache: true
-
-      - name: Install MatBox
-        uses: ehennestad/matbox/.github/actions/install-matbox@v0.9
-
-      - name: Run tests
-        uses: matlab-actions/run-command@v2
-        if: always()
-        with:
-          command: |
-            setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
-            setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
-            ndi.cloud.authenticate("InteractionEnabled", "off")
-            addpath('.')
-            addpath(genpath( "tests" ));
-            testToolbox()
+    uses: ehennestad/matbox/.github/workflows/reusable-job_run-tests.yml@make-release-workflow-reusable
+    with:
+      code_directory: +ndi
+      tools_directory: tests
+      matlab_products: ''
+      needs_python: false
+      matrix_json: ${{ needs.build_matrix.outputs.matrix }}
 
   release:
     name: Package toolbox and create draft release
@@ -85,8 +44,8 @@ jobs:
     uses: ehennestad/matbox/.github/workflows/reusable-job_package-toolbox.yml@make-release-workflow-reusable
     with:
       version_number: ${{ needs.validate_version.outputs.version_number }}
-      code_directory: ${{ env.CODE_DIRECTORY }}
-      tools_directory: ${{ env.TOOLS_DIRECTORY }}
+      code_directory: +ndi
+      tools_directory: tests
     secrets:
       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
 

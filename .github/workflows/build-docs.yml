@@ -27,21 +27,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          command: matbox.installRequirements(fullfile(pwd, 'docs'))
+          command: |
+            matbox.installRequirements(...
+              fullfile(pwd, 'docs'), ...
+              "InstallationLocation", "${{ runner.temp }}/MATLAB-AddOns")
+            did_Init()
 
       - name: Run ndi.docs.build()
         uses: matlab-actions/run-command@v2
         with:
           command: |
-            s = which('did.database')
-            isempty(s)
-
-            which did_Init
             ndi_Init()
-            did_Init()
-            s = which('did.database')
-            isempty(s)
-
             addpath(genpath('docs'))
             ndi.docs.build()
 

@@ -33,8 +33,11 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
+            which('did.database')
             which did_Init
             did_Init()
+            which('did.database')
+
             ndi_Init()
             addpath(genpath('docs'))
             ndi.docs.build()

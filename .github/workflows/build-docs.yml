@@ -41,11 +41,8 @@ jobs:
             addpath(genpath('docs'))
             ndi.docs.build()
 
-      - name: Remove lines with @ from mkdocs.yml
-        run: grep -v '@' mkdocs.yml > mkdocs.cleaned.yml && mv mkdocs.cleaned.yml mkdocs.yml
-      
-      - name: Copy mkdocs.yml to root
-        run: cp docs/NDI-matlab/mkdocs.yml ./mkdocs.yml
+      - name: Remove lines with @ from mkdocs.yml and save result to root directory
+        run: grep -v '@' docs/NDI-matlab/mkdocs.yml > mkdocs.yml
 
       - name: Set up Python
         uses: actions/setup-python@v5

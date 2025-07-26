@@ -32,7 +32,8 @@ jobs:
       - name: Run ndi.docs.build()
         uses: matlab-actions/run-command@v2
         with:
-          command: | 
+          command: |
+            did_Init()
             ndi_Init()
             addpath(genpath('docs'))
             ndi.docs.build()

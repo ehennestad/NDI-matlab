@@ -1,0 +1,51 @@
+name: Build and Deploy Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+
+      - name: Run ndi.docs.build()
+        uses: matlab-actions/run-command@v2
+        with:
+          command: | 
+            addpath(genpath(docs))
+            ndi.docs.build()
+
+      - name: Remove lines with @ from mkdocs.yml
+        run: grep -v '@' mkdocs.yml > mkdocs.cleaned.yml && mv mkdocs.cleaned.yml mkdocs.yml
+      
+      - name: Copy mkdocs.yml to root
+        run: cp docs/NDI-matlab/mkdocs.yml ./mkdocs.yml
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install mkdocs
+        run: |
+          pip install mkdocs
+          pip install mkdocs-material
+
+      - name: Deploy with mkdocs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdocs build
+      # run: mkdocs gh-deploy --clean
+
+      - name: List contents of site folder
+        run: ls site/
+
